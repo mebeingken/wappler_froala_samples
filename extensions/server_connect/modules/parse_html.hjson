@@ -1,0 +1,35 @@
+[
+    {
+  type: 'parse_html_parse',
+  module : 'parse_html',
+  action : 'parse',
+  groupTitle : 'Parse HTML',
+  groupIcon : 'fal fa-file-code',
+  title : 'Parse @@var(actionName)@@',
+  icon : 'fal fa-file-code',
+  dataPickObject: true,
+  dataScheme: [
+            {name: 'parse_html', type: 'object'}
+        ],
+  properties : [
+    {
+      group: 'Parse',
+      variables: [
+        { name: 'actionName', optionName: 'name', title: 'Name', 
+          type: 'text', required: true, defaultValue: ''},
+        { 
+            name: 'html_string',
+            optionName: 'html_string',
+            title: 'HTML string', 
+            type: 'text',
+            required: true,
+            serverDataBindings: true,
+            defaultValue: ''},
+        
+        
+          { name: 'output', optionName: 'output', title: 'Output', type: 'boolean', defaultValue: false }
+      ]
+    }
+  ]
+}
+]

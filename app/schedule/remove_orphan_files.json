@@ -1,0 +1,18 @@
+{
+  "settings": {
+    "options": {
+      "rule": "0 * * * * *"
+    }
+  },
+  "exec": {
+    "steps": [
+      {
+        "name": "",
+        "options": {
+          "comment": "check for orphan files to be removed"
+        }
+      },
+      "lib/remove_orphan_files"
+    ]
+  }
+}

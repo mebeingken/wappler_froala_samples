@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "$_GET": [
+      {
+        "type": "text",
+        "name": "id"
+      }
+    ]
+  },
+  "exec": {
+    "steps": {
+      "name": "post",
+      "module": "dbconnector",
+      "action": "single",
+      "options": {
+        "connection": "db",
+        "sql": {
+          "type": "SELECT",
+          "columns": [
+            {
+              "table": "post",
+              "column": "form_data"
+            }
+          ],
+          "table": {
+            "name": "post"
+          },
+          "primary": "id",
+          "joins": [],
+          "wheres": {
+            "condition": "AND",
+            "rules": [
+              {
+                "id": "post.id",
+                "field": "post.id",
+                "type": "double",
+                "operator": "equal",
+                "value": "{{$_GET.id}}",
+                "data": {
+                  "table": "post",
+                  "column": "id",
+                  "type": "number",
+                  "columnObj": {
+                    "type": "increments",
+                    "primary": true,
+                    "unique": false,
+                    "nullable": false,
+                    "name": "id"
+                  }
+                },
+                "operation": "="
+              }
+            ],
+            "conditional": null,
+            "valid": true
+          },
+          "query": "SELECT form_data\nFROM post\nWHERE id = :P1 /* {{$_GET.id}} */",
+          "params": [
+            {
+              "operator": "equal",
+              "type": "expression",
+              "name": ":P1",
+              "value": "{{$_GET.id}}"
+            }
+          ]
+        }
+      },
+      "output": true,
+      "meta": [
+        {
+          "type": "text",
+          "name": "form_data"
+        }
+      ],
+      "outputType": "object"
+    }
+  }
+}

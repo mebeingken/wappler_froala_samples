@@ -1,0 +1,71 @@
+<!-- Wappler include head-page="layouts/main" fontawesome_5="cdn" bootstrap5="local" is="dmx-app" id="index" appConnect="local" -->
+
+<meta name="ac:route" content="/:post_id?">
+
+<!-- An array of valid froala images -->
+<dmx-array id="froala_images"></dmx-array>
+
+<!-- An array of valid froala images to be removed -->
+<dmx-array id="froala_images_to_delete"></dmx-array>
+
+<!-- Load the froala editor after we have the existing post -->
+<dmx-serverconnect id="get_post" url="/api/get_post" dmx-param:id="query.post_id" onsuccess="loadFroala()"></dmx-serverconnect>
+
+<!-- A form with the editor inside -->
+<form id="form1" is="dmx-serverconnect-form" method="post" action="/api/form_save">
+
+    <!-- A hidden field with the id if the post should be udpated -->
+    <input id="hidden_post_id" name="post_id" type="hidden" class="form-control" dmx-bind:value="query.post_id">
+
+    <!-- For each valid froala image, create a hidden field with the path to that image -->
+    <div dmx-repeat:each_froala_image="froala_images.items">
+        <input id="hidden_froala_image" name="froala_image[]" type="hidden" class="form-control" dmx-bind:value="$value">
+    </div>
+
+    <!-- For each froala image no longer in use, create a hidden field with the path to that image -->
+    <div dmx-repeat:each_froala_image_to_delete="froala_images_to_delete.items">
+        <input id="hidden_froala_image_to_delete" name="froala_image_to_delete[]" type="hidden" class="form-control" dmx-bind:value="$value">
+    </div>
+
+    <!-- The text area element for the froala editor -->
+    <textarea id="challenge_content" class="form-control" name="form_data"></textarea>
+
+    <!-- Form submit button -->
+    <button id="btn1" class="btn btn-primary" type="submit">Submit</button>
+</form>
+
+
+
+<script>
+    function loadFroala(){
+        let froalaOptions = {
+
+            imageUploadParam: 'image', // The POST variable the server api is expecting
+            imageUploadURL: '/api/froala_image_upload', // The URL to the api
+            imageAllowedTypes: ['jpeg', 'jpg', 'png'], // allowed image types (optional)
+            events: { 
+                'image.inserted': function ($img, response) { 
+                    // Add to dmx array of valid images
+                    dmx.parse("content.froala_images.addUniq('"+JSON.parse(response).file_path+"')");
+                    
+                },
+                'image.replaced': function ($img, response) {
+                    // Add to dmx array of valid images
+                dmx.parse("content.froala_images.addUniq('"+JSON.parse(response).file_path+"')");
+                
+                },
+                'image.removed': function($img) {
+                   // remove from array of valid images and add to list to be removed
+                    dmx.parse("content.froala_images.remove('"+$img[0].getAttribute('file_path')+"')");
+                    dmx.parse("content.froala_images_to_delete.addUniq('"+$img[0].getAttribute('src')+"')");
+                }
+                
+            }
+        };
+
+        challengeFroala = new FroalaEditor('#challenge_content', froalaOptions, function () {
+            challengeFroala.html.set(dmx.app.data.content.get_post.data.post.form_data);
+        });    
+                       
+    }
+</script>

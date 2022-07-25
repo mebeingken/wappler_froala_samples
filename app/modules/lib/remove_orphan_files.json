@@ -1,0 +1,297 @@
+{
+  "meta": {
+    "$_GET": [
+      {
+        "type": "text",
+        "name": "sort"
+      },
+      {
+        "type": "text",
+        "name": "dir"
+      }
+    ]
+  },
+  "exec": {
+    "steps": [
+      {
+        "name": "",
+        "options": {
+          "comment": "Don't delete tmp media files until they are this number of minutes old"
+        }
+      },
+      {
+        "name": "minutes_before_stale",
+        "module": "core",
+        "action": "setvalue",
+        "options": {
+          "value": 2
+        },
+        "meta": [],
+        "outputType": "number",
+        "output": false
+      },
+      {
+        "name": "",
+        "options": {
+          "comment": "Calculate the delete time used in query of tmp media"
+        }
+      },
+      {
+        "name": "delete_time",
+        "module": "core",
+        "action": "setvalue",
+        "options": {
+          "value": "{{NOW_UTC.dateAdd('minutes', (minutes_before_stale * -1)).replace('T', ' ').replace('Z','')}}"
+        },
+        "meta": [],
+        "outputType": "text",
+        "output": false
+      },
+      {
+        "name": "",
+        "options": {
+          "comment": "Get list of orphan files that are ready to be deleted"
+        }
+      },
+      {
+        "name": "orphan_files",
+        "module": "dbconnector",
+        "action": "select",
+        "options": {
+          "connection": "db",
+          "sql": {
+            "type": "SELECT",
+            "columns": [
+              {
+                "table": "tmp_media",
+                "column": "path"
+              },
+              {
+                "table": "tmp_media",
+                "column": "created_at"
+              },
+              {
+                "table": "tmp_media",
+                "column": "id"
+              }
+            ],
+            "table": {
+              "name": "tmp_media"
+            },
+            "primary": "id",
+            "joins": [],
+            "query": "SELECT path, created_at, id\nFROM tmp_media\nWHERE created_at < :P1 /* {{delete_time}} */",
+            "params": [
+              {
+                "operator": "less",
+                "type": "expression",
+                "name": ":P1",
+                "value": "{{delete_time}}"
+              }
+            ],
+            "wheres": {
+              "condition": "AND",
+              "rules": [
+                {
+                  "id": "tmp_media.created_at",
+                  "field": "tmp_media.created_at",
+                  "type": "datetime",
+                  "operator": "less",
+                  "value": "{{delete_time}}",
+                  "data": {
+                    "table": "tmp_media",
+                    "column": "created_at",
+                    "type": "datetime",
+                    "columnObj": {
+                      "type": "datetime",
+                      "primary": false,
+                      "unique": false,
+                      "nullable": true,
+                      "default": "knex.fn.now()",
+                      "name": "created_at"
+                    }
+                  },
+                  "operation": "<"
+                }
+              ],
+              "conditional": null,
+              "valid": true
+            }
+          }
+        },
+        "output": false,
+        "meta": [
+          {
+            "type": "text",
+            "name": "path"
+          },
+          {
+            "type": "datetime",
+            "name": "created_at"
+          },
+          {
+            "type": "number",
+            "name": "id"
+          }
+        ],
+        "outputType": "array"
+      },
+      {
+        "name": "",
+        "options": {
+          "comment": "For each orphan file..."
+        }
+      },
+      {
+        "name": "repeat",
+        "module": "core",
+        "action": "repeat",
+        "options": {
+          "repeat": "{{orphan_files}}",
+          "outputFields": [],
+          "exec": {
+            "steps": [
+              {
+                "name": "",
+                "options": {
+                  "comment": "If there is a path in the db"
+                }
+              },
+              {
+                "name": "",
+                "module": "core",
+                "action": "condition",
+                "options": {
+                  "if": "{{path}}",
+                  "then": {
+                    "steps": [
+                      {
+                        "name": "",
+                        "options": {
+                          "comment": "and that path to a file exists"
+                        }
+                      },
+                      {
+                        "name": "fileExists",
+                        "module": "fs",
+                        "action": "exists",
+                        "options": {
+                          "path": "{{path}}",
+                          "then": {
+                            "steps": [
+                              {
+                                "name": "",
+                                "options": {
+                                  "comment": "delete the file"
+                                }
+                              },
+                              {
+                                "name": "fileRemove",
+                                "module": "fs",
+                                "action": "remove",
+                                "options": {
+                                  "path": "{{path}}"
+                                },
+                                "outputType": "boolean"
+                              },
+                              {
+                                "name": "",
+                                "options": {
+                                  "comment": "and delete the tmp media record"
+                                }
+                              },
+                              {
+                                "name": "delete_tmp_media",
+                                "module": "dbupdater",
+                                "action": "delete",
+                                "options": {
+                                  "connection": "db",
+                                  "sql": {
+                                    "type": "delete",
+                                    "table": "tmp_media",
+                                    "wheres": {
+                                      "condition": "AND",
+                                      "rules": [
+                                        {
+                                          "id": "id",
+                                          "field": "id",
+                                          "type": "double",
+                                          "operator": "equal",
+                                          "value": "{{id}}",
+                                          "data": {
+                                            "column": "id"
+                                          },
+                                          "operation": "="
+                                        }
+                                      ],
+                                      "conditional": null,
+                                      "valid": true
+                                    },
+                                    "returning": "id",
+                                    "query": "DELETE\nFROM tmp_media\nWHERE id = :P1 /* {{id}} */",
+                                    "params": [
+                                      {
+                                        "operator": "equal",
+                                        "type": "expression",
+                                        "name": ":P1",
+                                        "value": "{{id}}"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "meta": [
+                                  {
+                                    "name": "affected",
+                                    "type": "number"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        },
+                        "outputType": "boolean"
+                      }
+                    ]
+                  }
+                },
+                "outputType": "boolean"
+              }
+            ]
+          }
+        },
+        "output": false,
+        "meta": [
+          {
+            "name": "$index",
+            "type": "number"
+          },
+          {
+            "name": "$number",
+            "type": "number"
+          },
+          {
+            "name": "$name",
+            "type": "text"
+          },
+          {
+            "name": "$value",
+            "type": "object"
+          },
+          {
+            "name": "path",
+            "type": "text"
+          },
+          {
+            "name": "created_at",
+            "type": "datetime"
+          },
+          {
+            "name": "id",
+            "type": "number"
+          }
+        ],
+        "outputType": "array"
+      }
+    ]
+  }
+}

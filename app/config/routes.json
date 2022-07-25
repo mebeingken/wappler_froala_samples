@@ -1,0 +1,10 @@
+{
+  "routes": [
+    {
+      "path": "/:post_id?",
+      "page": "index",
+      "routeType": "page",
+      "layout": "main"
+    }
+  ]
+}

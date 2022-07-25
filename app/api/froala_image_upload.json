@@ -1,0 +1,149 @@
+{
+  "meta": {
+    "$_POST": [
+      {
+        "type": "file",
+        "name": "image",
+        "sub": [
+          {
+            "type": "text",
+            "name": "name"
+          },
+          {
+            "type": "text",
+            "name": "type"
+          },
+          {
+            "type": "number",
+            "name": "size"
+          },
+          {
+            "type": "text",
+            "name": "error"
+          }
+        ],
+        "outputType": "file"
+      }
+    ]
+  },
+  "exec": {
+    "steps": [
+      {
+        "name": "",
+        "options": {
+          "comment": "save the image locally"
+        }
+      },
+      {
+        "name": "upload",
+        "module": "upload",
+        "action": "upload",
+        "options": {
+          "path": "/public/uploads",
+          "template": "{guid}{ext}"
+        },
+        "meta": [
+          {
+            "name": "name",
+            "type": "text"
+          },
+          {
+            "name": "path",
+            "type": "text"
+          },
+          {
+            "name": "url",
+            "type": "text"
+          },
+          {
+            "name": "type",
+            "type": "text"
+          },
+          {
+            "name": "size",
+            "type": "text"
+          },
+          {
+            "name": "error",
+            "type": "number"
+          }
+        ],
+        "outputType": "array",
+        "output": false
+      },
+      {
+        "name": "",
+        "options": {
+          "comment": "return the path to the file"
+        }
+      },
+      {
+        "name": "link",
+        "module": "core",
+        "action": "setvalue",
+        "options": {
+          "value": "{{upload[0].path.replace('/public','')}}"
+        },
+        "meta": [],
+        "outputType": "text",
+        "output": true
+      },
+      {
+        "name": "file_path",
+        "module": "core",
+        "action": "setvalue",
+        "options": {
+          "value": "{{upload[0].path}}"
+        },
+        "meta": [],
+        "outputType": "text",
+        "output": true
+      },
+      {
+        "name": "",
+        "options": {
+          "comment": "create a tmp media record"
+        }
+      },
+      {
+        "name": "insert_tmp_media",
+        "module": "dbupdater",
+        "action": "insert",
+        "options": {
+          "connection": "db",
+          "sql": {
+            "type": "insert",
+            "values": [
+              {
+                "table": "tmp_media",
+                "column": "path",
+                "type": "text",
+                "value": "{{upload[0].path}}"
+              }
+            ],
+            "table": "tmp_media",
+            "returning": "id",
+            "query": "INSERT INTO tmp_media\n(path) VALUES (:P1 /* {{upload[0].path}} */)",
+            "params": [
+              {
+                "name": ":P1",
+                "type": "expression",
+                "value": "{{upload[0].path}}"
+              }
+            ]
+          }
+        },
+        "meta": [
+          {
+            "name": "identity",
+            "type": "text"
+          },
+          {
+            "name": "affected",
+            "type": "number"
+          }
+        ]
+      }
+    ]
+  }
+}

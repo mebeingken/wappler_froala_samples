@@ -1,0 +1,65 @@
+{
+  "type": "sqlite3",
+  "connection": {
+    "filename": "/db.sqlite3"
+  },
+  "direct": true,
+  "schema": {
+    "tables": {
+      "tmp_media": {
+        "db": {},
+        "columns": {
+          "id": {
+            "db": {
+              "type": "increments",
+              "primary": true,
+              "unique": false,
+              "nullable": false
+            }
+          },
+          "path": {
+            "db": {
+              "type": "string",
+              "maxLength": 255,
+              "primary": false,
+              "unique": false,
+              "nullable": true
+            }
+          },
+          "created_at": {
+            "db": {
+              "type": "datetime",
+              "primary": false,
+              "unique": false,
+              "nullable": true,
+              "default": "knex.fn.now()"
+            }
+          }
+        }
+      },
+      "post": {
+        "db": {},
+        "columns": {
+          "id": {
+            "db": {
+              "type": "increments",
+              "primary": true,
+              "unique": false,
+              "nullable": false
+            }
+          },
+          "form_data": {
+            "db": {
+              "type": "text",
+              "maxLength": 255,
+              "primary": false,
+              "unique": false,
+              "nullable": true
+            }
+          }
+        }
+      }
+    },
+    "views": {}
+  }
+}
